@@ -1,0 +1,28 @@
+import { NextResponse } from 'next/server'
+
+// Certificado público QZ Tray — se sirve desde el servidor, no depende de public/
+// La clave PRIVADA correspondiente está en QZ_PRIVATE_KEY_B64 (env del servidor)
+const CERTIFICATE = `-----BEGIN CERTIFICATE-----
+MIIC0TCCAbmgAwIBAgIBATANBgkqhkiG9w0BAQsFADAsMREwDwYDVQQDEwhRdWVl
+blBPUzEXMBUGA1UEChMOUXVlZW4gQnJvYXN0ZXIwHhcNMjYwNjAzMDA1ODQ0WhcN
+MzYwNjAzMDA1ODQ0WjAsMREwDwYDVQQDEwhRdWVlblBPUzEXMBUGA1UEChMOUXVl
+ZW4gQnJvYXN0ZXIwggEiMA0GCSqGSIb3DQEBAQUAA4IBDwAwggEKAoIBAQCn3DH1
+rf9Hh0Dy/i93rtZTlFBXbB2dADvnF8cCXUA93u/Y3CMOm653tkgjuCxWperswmHT
+9GwEqz9f3ZOYg5zks4xBeFR8frvGd0NXHUTRQtFtyqzyU7MGAbdS8Ouxa9G2WNTR
+MU6K552G7NGeAiCy4CF2LjWCVBYD8EmZgr89ZuloU76jM8DSU4vaYif9Y8f5ZuuN
+dUU+ZwgtuvDwfO4RWzZ1RmPfeWMV/wUmp0AQeuXefFdupJLVl4GIvv1YVGZ4q7RZ
+eXhnFwPCWYMaLwS0FtZeQ5iAXKAJWNO+TZ4jRpaF2GBXRhA/+mHepYZHFT9EP8HL
+9P5U13h6EX+ADCIJAgMBAAEwDQYJKoZIhvcNAQELBQADggEBACg5vnlhnkbtz3G6
+tsXml+wZQlA6Qty/S0epaTl7RPqjdLzo7z8eH6jUOJRqOxiNVj4K6WJU1tiGtbP0
+ZrVy01yFqiV1YSuVYDFX7hr9rwVN6DAqlJITLSkK6h3+2FZzoYcBlSzEgDGq4Wmm
+CVta5pqO+js8d9+I3Um1Y1iBVvbX2wHvZQvY0N6LkIpn559nw4rvKmiMo768cCCh
+Z+2Nptwajc2E9gTKglGjb1Ke+zMTljAGCHQDMKvzW9ABv5pc9iCVAB3M7JK2bN4r
+ixFShwvptzPRWh0KcJyMuA9rGDd4now5oqmsNLbbsB+IqL5VnMYm/McdXIiD7y0F
+L4R+k4A=
+-----END CERTIFICATE-----`
+
+export async function GET() {
+  return new NextResponse(CERTIFICATE, {
+    headers: { 'Content-Type': 'application/x-pem-file' },
+  })
+}
