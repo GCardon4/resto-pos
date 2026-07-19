@@ -18,13 +18,13 @@ const inter = Inter({
 })
 
 export const metadata: Metadata = {
-  title: 'Queen Broaster POS',
-  description: 'Sistema de Punto de Venta - Queen Broaster',
+  title: 'Resto-POS',
+  description: 'Sistema de Punto de Venta - Resto-POS',
   manifest: '/manifest.webmanifest',
   appleWebApp: {
     capable: true,
     statusBarStyle: 'black-translucent',
-    title: 'QueenPOS',
+    title: 'RestoPOS',
     startupImage: '/icons/icon-512x512.png',
   },
   icons: {

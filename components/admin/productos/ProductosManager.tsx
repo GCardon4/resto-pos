@@ -11,30 +11,19 @@ interface FormProducto { nombre: string; sku: string; precio: string; costo: str
 const FORM_VACIO: FormProducto = { nombre: '', sku: '', precio: '', costo: '', descripcion: '', categoriaId: '', stock: '0', cocina: false, imagen: '' }
 
 const IMAGENES_PRODUCTOS = [
-  { archivo: '/products/broaster-one.png', etiqueta: 'Broaster' },
-  { archivo: '/products/chicken.png', etiqueta: 'Pollo' },
-  { archivo: '/products/burguer.png', etiqueta: 'Hamburguesa' },
-  { archivo: '/products/burguer-02.png', etiqueta: 'Hamburguesa' },
-  { archivo: '/products/burguer-03.png', etiqueta: 'Hamburguesa' },
-  { archivo: '/products/burguer-04.png', etiqueta: 'Hamburguesa' },
-  { archivo: '/products/burguer-05.png', etiqueta: 'Hamburguesa' },
-  { archivo: '/products/burguer-07.png', etiqueta: 'Hamburguesa' },
+  { archivo: '/products/desayuno-dia.png', etiqueta: 'Desayuno' },
+  { archivo: '/products/menu-dia.png', etiqueta: 'Menú del Día' },
   { archivo: '/products/bebidas.png', etiqueta: 'Bebidas' },
   { archivo: '/products/sodas.png', etiqueta: 'Sodas' },
   { archivo: '/products/lemonade.png', etiqueta: 'Limonada' },
   { archivo: '/products/te.png', etiqueta: 'Te o Aromatica' },
   { archivo: '/products/coffee.png', etiqueta: 'Cafe' },
   { archivo: '/products/beer.png', etiqueta: 'Cerveza' },
-  { archivo: '/products/salchipapa.png', etiqueta: 'Salchipapa' },
-  { archivo: '/products/salad.png', etiqueta: 'Ensalada' },
-  { archivo: '/products/wings.png', etiqueta: 'Wings' },
-  { archivo: '/products/wings-02.png', etiqueta: 'Wings' },
-  { archivo: '/products/wings-03.png', etiqueta: 'Wings' },
-  { archivo: '/products/chuzo.png', etiqueta: 'Chuzo' },
-  { archivo: '/products/nuggets.png', etiqueta: 'Nuggets' },
-  { archivo: '/products/nuggets-02.png', etiqueta: 'Nuggets' },
   { archivo: '/products/juice.png', etiqueta: 'Jugo' },
-  { archivo: '/products/combo.png', etiqueta: 'Combo' },
+  { archivo: '/products/pollo-entero.png', etiqueta: 'Pollo Entero' },
+  { archivo: '/products/pollo-cuarto.png', etiqueta: 'Pollo Cuarto' },
+  { archivo: '/products/pollo-medio.png', etiqueta: 'Pollo Medio' },
+  { archivo: '/products/pollo-presa.png', etiqueta: 'Pollo Presa' },
 ]
 
 // Gestor CRUD de productos del restaurante

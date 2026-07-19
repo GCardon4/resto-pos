@@ -1,5 +1,5 @@
 # Descripción del Proyecto
-App-web para un sistema POS para Queen Broaster, restaurante de pollos y comidas rápidas, con sistema de Mesas, Pedidos y Pedidos en Lista para la cocina, sistema moderno para el apoyo de esta gran herramienta ofrecer un buen servicio a los clientes
+App-web para un sistema POS para Resto-POS, restaurante de pollos y comidas rápidas, con sistema de Mesas, Pedidos y Pedidos en Lista para la cocina, sistema moderno para el apoyo de esta gran herramienta ofrecer un buen servicio a los clientes
 
 # Agents Rules
 -   Cada función nueva debe incluir una linea con el nombre de la acción en Español.

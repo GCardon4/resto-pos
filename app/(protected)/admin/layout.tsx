@@ -33,7 +33,7 @@ export default async function AdminLayout({ children }: { children: React.ReactN
           {/* Logo visible solo en móvil */}
           <div className="flex items-center gap-2 lg:hidden">
             <span className="material-symbols-outlined text-primary text-[22px] filled-icon">restaurant_menu</span>
-            <span className="font-display font-bold text-sm text-primary">Queen Broaster</span>
+            <span className="font-display font-bold text-sm text-primary">Resto-POS</span>
           </div>
           <div className="hidden lg:block" />
 

@@ -18,8 +18,8 @@ export default function LoginPage() {
         {/* Logo corporativo */}
         <div className="flex justify-center mb-10">
           <Image
-            src="/logotipo-queen-broaster.svg"
-            alt="Queen Broaster"
+            src="/logotipo-resto-pos.svg"
+            alt="Gustavo Cardona"
             width={260}
             height={130}
             priority
@@ -48,7 +48,7 @@ export default function LoginPage() {
                 name="email"
                 required
                 autoComplete="email"
-                placeholder="usuario@queenbroaster.com"
+                placeholder="usuario@correo.com"
                 className="w-full px-4 py-3 rounded-xl bg-white/8 border border-white/15 text-white placeholder:text-zinc-600 focus:outline-none focus:border-amber-500 focus:ring-1 focus:ring-amber-500/50 transition-all text-sm"
               />
             </div>
@@ -102,7 +102,7 @@ export default function LoginPage() {
 
         {/* Footer */}
         <p className="text-center text-zinc-700 text-xs mt-8">
-          Queen Broaster POS &copy; {new Date().getFullYear()}
+          Gustavo Cardona POS &copy; {new Date().getFullYear()}
         </p>
 
       </div>

@@ -35,7 +35,7 @@ export function AdminNav({ nombreUsuario }: { nombreUsuario: string }) {
         {/* Logo */}
         <div className="px-6 py-5 flex items-center gap-3 border-b border-surface-variant">
           <span className="material-symbols-outlined text-primary text-[32px] filled-icon">restaurant_menu</span>
-          <h1 className="font-display font-bold text-xl text-primary leading-tight">Queen Broaster</h1>
+          <h1 className="font-display font-bold text-xl text-primary leading-tight">Resto-POS</h1>
         </div>
 
         {/* Navegación */}

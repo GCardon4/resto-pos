@@ -3,9 +3,9 @@ import type { MetadataRoute } from "next";
 // Manifiesto de la PWA — cumple criterios de instalación de Chrome/Edge/Android
 export default function manifest(): MetadataRoute.Manifest {
   return {
-    name: "Queen POS — Queen Broaster",
-    short_name: "QueenPOS",
-    description: "Sistema de Punto de Venta - Queen Broaster",
+    name: "Resto-POS — Resto Broaster",
+    short_name: "RestoPOS",
+    description: "Sistema de Punto de Venta - Resto-POS",
     start_url: "/caja",
     id: "/caja",
     scope: "/",

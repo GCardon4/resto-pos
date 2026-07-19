@@ -1,4 +1,4 @@
-🗃️ Database Schema – Queen Broaster POS
+🗃️ Database Schema – Resto POS
 
 ## 📌 Propósito
 
@@ -37,7 +37,7 @@ Este esquema soporta múltiples clientes que presentan visualizaciones y clics c
 
 | Campo      | Tipo | Descripción            |
 | ---------- | ---- | ---------------------- |
-| id         | uuid | PK (Auth Supabase)     |
+| id         | int8 | PK                     |
 | created_at | date | Fecha de creación      |
 | name       | text | Nombre del Rol         |
 
