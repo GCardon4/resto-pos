@@ -203,3 +203,36 @@ Relación muchos-a-muchos entre `order_items` y `adds-on`: cada ítem (producto)
 | created_at     | date | Fecha de Creación |
 
 ---
+
+
+## expenses (Gastos)
+
+| Campo               | Tipo    | Descripción             |
+| ------------------- | ------- | ----------------------- |
+| id                  | int8    | PK                      |
+| expense_date        | date    | Fecha de creación       |
+| expense_category_id | int8    | FK → expense_categories |
+| description         | text    | INCOME-EXPENSE          |
+| amount              | numeric | Monto                   |
+
+
+---
+
+## expense_categories (Categoría Gastos)
+
+| Campo      | Tipo | Descripción             |
+| ---------- | ---- | ----------------------- |
+| id         | int8 | PK                      |
+| created_at | date | Fecha de creación       |
+| name       | text | Categoría Gasto         |
+
+#### Ejemplo:
+
+	Servicios
+	Nómina
+	Transporte
+	Mantenimiento
+	Arriendo
+
+
+---

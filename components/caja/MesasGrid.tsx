@@ -16,6 +16,7 @@ import {
 } from '@/modules/caja/actions'
 import { imprimirOrden } from '@/lib/impresion/ordenesImpresion'
 import { HistorialFacturas } from '@/components/caja/HistorialFacturas'
+import { Gastos } from '@/components/caja/Gastos'
 import { BuscadorProductos } from '@/components/caja/BuscadorProductos'
 import {
   abrirCajon,
@@ -175,8 +176,8 @@ export function MesasGrid({
   // Mapa de catálogo de complementos para resolver precio/nombre por ID
   const addonMap = new Map(addsOnCatalogo.map(a => [a.id, a]))
 
-  // Vista activa en el grid principal: mesas o historial
-  const [vistaActual, setVistaActual] = useState<'mesas' | 'historial'>('mesas')
+  // Vista activa en el grid principal: mesas, historial o gastos
+  const [vistaActual, setVistaActual] = useState<'mesas' | 'historial' | 'gastos'>('mesas')
 
   // Cajón de caja registradora
   // Valor inicial igual al del servidor (evita hydration mismatch)
@@ -1691,7 +1692,7 @@ export function MesasGrid({
           <h1 className="font-display font-bold text-2xl text-primary hidden sm:block">Queen Broaster</h1>
         </div>
 
-        {/* Pestañas de navegación: Mesas | Historial */}
+        {/* Pestañas de navegación: Mesas | Historial | Gastos */}
         <nav className="flex items-center bg-surface-container-low rounded-xl p-1 gap-1">
           <button
             onClick={() => setVistaActual('mesas')}
@@ -1714,6 +1715,17 @@ export function MesasGrid({
           >
             <span className="material-symbols-outlined text-[18px]">receipt_long</span>
             <span>Historial</span>
+          </button>
+          <button
+            onClick={() => setVistaActual('gastos')}
+            className={`flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-semibold transition-all ${
+              vistaActual === 'gastos'
+                ? 'bg-primary text-on-primary shadow-sm'
+                : 'text-on-surface-variant hover:bg-surface-container-high'
+            }`}
+          >
+            <span className="material-symbols-outlined text-[18px]">payments</span>
+            <span>Gastos</span>
           </button>
         </nav>
 
@@ -1912,6 +1924,8 @@ export function MesasGrid({
 
       {vistaActual === 'historial' && <HistorialFacturas />}
 
+      {vistaActual === 'gastos' && <Gastos />}
+
       {vistaActual === 'mesas' && (<>
 
       {/* Banner de Domicilio */}
@@ -2050,6 +2064,17 @@ export function MesasGrid({
         >
           <span className="material-symbols-outlined text-[22px]">receipt_long</span>
           <span className="text-xs font-semibold">Historial</span>
+        </button>
+        <button
+          onClick={() => setVistaActual('gastos')}
+          className={`flex flex-col items-center gap-0.5 px-8 py-1 rounded-xl transition-colors ${
+            vistaActual === 'gastos'
+              ? 'bg-primary-container text-on-primary-container'
+              : 'text-on-surface-variant'
+          }`}
+        >
+          <span className="material-symbols-outlined text-[22px]">payments</span>
+          <span className="text-xs font-semibold">Gastos</span>
         </button>
       </nav>
     </div>
