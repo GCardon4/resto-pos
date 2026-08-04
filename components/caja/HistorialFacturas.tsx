@@ -100,6 +100,7 @@ async function imprimirRecibo(ventaId: number): Promise<void> {
       margin: 0 auto;
       padding: 4mm 3mm;
       color: #000;
+      margin-bottom: 200mm; /* espacio para corte de papel */
     }
     .center { text-align: center; }
     .bold { font-weight: bold; }

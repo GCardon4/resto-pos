@@ -34,10 +34,11 @@ const crearFirmador = () => {
     try {
       const clave = inicializarClave()
 
-      const md = forge.md.sha512.create()
-      md.update(datosAFirmar, 'utf8')
+      // Usar signer para evitar problemas de tipos con forge
+      const signer = forge.pki.createSigner('sha512', clave as any)
+      signer.update(datosAFirmar, 'utf8')
+      const firma = signer.sign() as string
 
-      const firma = clave.sign(md)
       const firmaBase64 = forge.util.encode64(firma)
 
       return {
