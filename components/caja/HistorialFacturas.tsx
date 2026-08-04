@@ -2,7 +2,6 @@
 
 import { useState, useEffect, useCallback } from 'react'
 import { obtenerHistorialFacturas, obtenerDetalleFactura } from '@/modules/caja/actions'
-import { leerConfigCajon, imprimirHtmlQZ } from '@/lib/cajon'
 
 interface VentaResumen {
   id: number
@@ -150,13 +149,7 @@ async function imprimirRecibo(ventaId: number): Promise<void> {
 </body>
 </html>`
 
-  // Intentar impresión directa vía QZ Tray si hay impresora configurada
-  const config = leerConfigCajon()
-  if (config.modo === 'qz' && config.nombreImpresora) {
-    const resultado = await imprimirHtmlQZ(config.nombreImpresora, htmlRecibo)
-    if (resultado.ok) return
-    console.warn('[Impresión] QZ falló, usando ventana del navegador:', resultado.error)
-  }
+  // Impresión vía navegador
 
   // Fallback: ventana del navegador con diálogo de impresión
   const ventana = window.open('', '_blank', 'width=420,height=650,toolbar=no,menubar=no')

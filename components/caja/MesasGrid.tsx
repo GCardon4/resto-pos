@@ -20,7 +20,6 @@ import { Gastos } from '@/components/caja/Gastos'
 import { BuscadorProductos } from '@/components/caja/BuscadorProductos'
 import {
   abrirCajon,
-  abrirCajonQZ,
   seleccionarPuertoSerial,
   leerConfigCajon,
   guardarConfigCajon,
@@ -179,16 +178,15 @@ export function MesasGrid({
   // Vista activa en el grid principal: mesas, historial o gastos
   const [vistaActual, setVistaActual] = useState<'mesas' | 'historial' | 'gastos'>('mesas')
 
-  // Cajón de caja registradora
-  // Valor inicial igual al del servidor (evita hydration mismatch)
-  const [cajonConfig, setCajonConfig] = useState<CajonConfig>({ modo: 'qz', nombreImpresora: '' })
+  // Cajón de caja registradora (solo Web Serial)
+  const [cajonConfig, setCajonConfig] = useState<CajonConfig>({ modo: 'serial', baudRate: 9600, pin: 0 })
   const [cajonConfigurado, setCajonConfigurado] = useState(false)
 
   // Leer desde localStorage solo en cliente, después de hidratación
   useEffect(() => {
     const cfg = leerConfigCajon()
     setCajonConfig(cfg)
-    setCajonConfigurado(!!(cfg.modo === 'qz' ? cfg.nombreImpresora?.trim() : true))
+    setCajonConfigurado(true)
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [])
   const [modalCajon, setModalCajon] = useState(false)
@@ -311,11 +309,10 @@ export function MesasGrid({
     setNumeroGps('')
   }
 
-  // Guardar configuración y marcar como configurado
+  // Guardar configuración
   const aplicarConfigCajon = (cfg: CajonConfig) => {
     setCajonConfig(cfg)
     guardarConfigCajon(cfg)
-    setCajonConfigurado(!!(cfg.modo === 'qz' ? cfg.nombreImpresora?.trim() : true))
   }
 
   // Abrir cajón automáticamente al confirmar pago
@@ -332,13 +329,7 @@ export function MesasGrid({
     if (res.ok) {
       setCajonMensaje({ ok: true, texto: '✓ Cajón abierto correctamente' })
     } else {
-      const textos: Record<string, string> = {
-        QZ_NOT_RUNNING: 'QZ Tray no está corriendo. Ábrelo desde la bandeja del sistema o reinstálalo.',
-        QZ_CERT: 'Certificado no aceptado. Abre Chrome en: https://localhost:8181 y acepta el certificado.',
-        PRINTER_NOT_FOUND: res.error ?? 'Impresora no encontrada',
-      }
-      const code = (res as any).code ?? ''
-      setCajonMensaje({ ok: false, code, texto: textos[code] ?? res.error ?? 'No se pudo abrir el cajón' })
+      setCajonMensaje({ ok: false, texto: res.error ?? 'No se pudo abrir el cajón' })
     }
   }
 
@@ -1741,51 +1732,7 @@ export function MesasGrid({
 
             <div className="px-5 py-4 space-y-4">
 
-              {/* Selector de modo */}
-              <div className="grid grid-cols-2 gap-2">
-                {(['qz', 'serial'] as const).map(m => (
-                  <button
-                    key={m}
-                    onClick={() => aplicarConfigCajon({ ...cajonConfig, modo: m })}
-                    className={`py-2.5 rounded-xl text-xs font-bold border-2 flex flex-col items-center gap-0.5 transition-all ${
-                      cajonConfig.modo === m
-                        ? 'border-primary bg-primary/10 text-primary'
-                        : 'border-surface-variant text-on-surface-variant hover:bg-surface-container-high'
-                    }`}
-                  >
-                    <span className="material-symbols-outlined text-[18px]">
-                      {m === 'qz' ? 'lan' : 'cable'}
-                    </span>
-                    {m === 'qz' ? 'QZ Tray (USB)' : 'Puerto COM'}
-                  </button>
-                ))}
-              </div>
-
-              {/* ── Modo QZ Tray ── */}
-              {cajonConfig.modo === 'qz' && (
-                <div className="space-y-3">
-                  <div className="bg-blue-50 border border-blue-200 rounded-xl px-4 py-3 text-xs text-blue-800 space-y-1">
-                    <p className="font-bold">Requiere QZ Tray instalado</p>
-                    <p>Descarga gratis en <strong>qz.io</strong> e instálalo en este computador. Debe estar ejecutándose en la bandeja del sistema.</p>
-                  </div>
-                  <div>
-                    <p className="text-xs font-semibold text-on-surface-variant uppercase tracking-wider mb-1.5">Nombre de la impresora en Windows</p>
-                    <input
-                      type="text"
-                      value={cajonConfig.nombreImpresora ?? ''}
-                      onChange={e => aplicarConfigCajon({ ...cajonConfig, nombreImpresora: e.target.value })}
-                      placeholder="Ej: 3nStar RPT004"
-                      className="w-full px-3 py-2.5 bg-surface-container-low border border-surface-variant rounded-xl text-sm focus:ring-2 focus:ring-primary outline-none"
-                    />
-                    <p className="text-[10px] text-on-surface-variant mt-1">
-                      Nombre exacto que aparece en Panel de control → Dispositivos e impresoras
-                    </p>
-                  </div>
-                </div>
-              )}
-
-              {/* ── Modo Puerto COM (Web Serial) ── */}
-              {cajonConfig.modo === 'serial' && (
+              {/* Configuración Web Serial */}
                 <div className="space-y-3">
                   <div className="bg-amber-50 border border-amber-200 rounded-xl px-4 py-3 text-xs text-amber-800 space-y-1">
                     <p className="font-bold">Solo funciona si existe un puerto COM</p>
@@ -1835,7 +1782,6 @@ export function MesasGrid({
                     Seleccionar Puerto COM
                   </button>
                 </div>
-              )}
 
               {/* Resultado del test */}
               {cajonMensaje && (
