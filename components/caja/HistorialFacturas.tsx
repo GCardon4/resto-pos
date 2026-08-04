@@ -99,7 +99,7 @@ async function imprimirRecibo(ventaId: number): Promise<void> {
       margin: 0 auto;
       padding: 4mm 3mm;
       color: #000;
-      margin-bottom: 210px; /* espacio para corte de papel */
+      margin-bottom: 500px; /* espacio para corte de papel */
     }
     .center { text-align: center; }
     .bold { font-weight: bold; }
@@ -113,7 +113,7 @@ async function imprimirRecibo(ventaId: number): Promise<void> {
     .total-row { font-size: 14px; font-weight: bold; margin-top: 2px; }
     .doc-type { font-size: 11px; font-weight: bold; text-align: center; margin: 2px 0; }
     @media print {
-      body { width: 80mm; margin: 0; padding: 2mm 2mm 200mm; }
+      body { width: 80mm; margin: 0; padding: 2mm 2mm 500mm; }
       @page { margin: 0; size: 80mm auto; }
     }
   </style>
