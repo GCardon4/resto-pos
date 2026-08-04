@@ -20,21 +20,30 @@ async function insertarItemsConComplementos(
   ordenId: number,
   items: ItemPedido[]
 ): Promise<string | null> {
+  console.log('📦 Insertando items para orden:', ordenId, 'cantidad:', items.length)
+  const itemsToInsert = items.map(i => ({
+    order_id: ordenId,
+    product_id: i.productoId,
+    price: Number(i.precio),
+    notes: i.notas || null,
+    status: 'pending',
+    quantity: Number(i.cantidad),
+  }))
+  console.log('📋 Items a insertar:', JSON.stringify(itemsToInsert, null, 2))
+
   const { data: itemsInsertados, error: errorItems } = await supabase
     .from('order_items')
-    .insert(
-      items.map(i => ({
-        order_id: ordenId,
-        product_id: i.productoId,
-        price: i.precio,
-        quantity: i.cantidad,
-        notes: i.notas || null,
-        status: 'pending',
-      }))
-    )
+    .insert(itemsToInsert)
     .select('id, product_id')
 
-  if (errorItems) return errorItems.message
+  console.log('📊 Resultado inserción items:', { itemsInsertados, errorItems })
+
+  if (errorItems) {
+    console.log('❌ Error al insertar items:', errorItems.message)
+    return errorItems.message
+  }
+
+  console.log('✅ Items insertados:', itemsInsertados)
 
   // Vincular complementos por producto (el carrito agrupa un ítem por producto)
   const vinculos = items.flatMap(item =>
@@ -138,26 +147,63 @@ export async function enviarPedidoCocina(
 ) {
   const supabase = await createClient()
 
+  // Obtener el ID del estado 'pending' de la tabla status_tables
+  console.log('🔍 Buscando estado "pending" en status_tables...')
+  const { data: estadoPending, error: errorEstado } = await supabase
+    .from('status_tables')
+    .select('id')
+    .eq('name', 'pending')
+    .single()
+
+  console.log('📊 Resultado de búsqueda:', { estadoPending, errorEstado })
+
+  if (errorEstado || !estadoPending) {
+    console.log('❌ Error al encontrar estado pending:', errorEstado?.message || 'No se encontraron datos')
+    return { error: 'No se encontró el estado "pending" en la base de datos' }
+  }
+
+  console.log('✅ Estado pending encontrado:', estadoPending)
+
+  console.log('📝 Creando orden con estado ID:', estadoPending.id)
   const { data: orden, error: errorOrden } = await supabase
     .from('order')
-    .insert({ table_id: mesaId, user_id: userId, status: 'pending', gps: gps ?? null })
+    .insert({ table_id: mesaId, user_id: userId, status: estadoPending.id, gps: gps ?? null })
     .select('id')
     .single()
 
+  console.log('📋 Resultado creación orden:', { orden, errorOrden })
+
   if (errorOrden || !orden) {
+    console.log('❌ Error al crear orden:', errorOrden?.message)
     return { error: errorOrden?.message ?? 'Error al crear el pedido' }
   }
 
-  // Insertar ítems y vincular sus complementos
-  const errorItems = await insertarItemsConComplementos(supabase, orden.id, items)
-  if (errorItems) return { error: errorItems }
+  console.log('✅ Orden creada ID:', orden.id)
 
+  // Insertar ítems y vincular sus complementos
+  console.log('🛒 Insertando', items.length, 'ítems...')
+  const errorItems = await insertarItemsConComplementos(supabase, orden.id, items)
+  if (errorItems) {
+    console.log('❌ Error al insertar items:', errorItems)
+    return { error: errorItems }
+  }
+
+  console.log('✅ Ítems insertados correctamente')
+
+  console.log('🪑 Actualizando mesa ID:', mesaId, 'a status=true')
   const { error: errorMesa } = await supabase
     .from('tables')
     .update({ status: true })
     .eq('id', mesaId)
 
-  if (errorMesa) return { error: errorMesa.message }
+  console.log('📋 Resultado actualización mesa:', { errorMesa })
+
+  if (errorMesa) {
+    console.log('❌ Error al actualizar mesa:', errorMesa.message)
+    return { error: errorMesa.message }
+  }
+
+  console.log('✅ Mesa actualizada exitosamente')
 
   revalidatePath('/caja')
   return { error: null, ordenId: orden.id }
@@ -171,15 +217,35 @@ export async function enviarDomicilioCocina(
 ) {
   const supabase = await createClient()
 
+  console.log('🏠 Enviando domicilio - Cliente:', clienteDatos.nombre)
   const customerId = await resolverCliente({
     nombre: clienteDatos.nombre,
     telefono: clienteDatos.telefono,
     direccion: clienteDatos.direccion,
   })
 
+  console.log('👤 Customer ID resuelto:', customerId)
+
+  // Obtener el ID del estado 'pending' de la tabla status_tables
+  console.log('🔍 Buscando estado "pending" en status_tables...')
+  const { data: estadoPending, error: errorEstado } = await supabase
+    .from('status_tables')
+    .select('id')
+    .eq('name', 'pending')
+    .single()
+
+  console.log('📊 Resultado de búsqueda:', { estadoPending, errorEstado })
+
+  if (errorEstado || !estadoPending) {
+    console.log('❌ Error al encontrar estado pending:', errorEstado?.message)
+    return { error: 'No se encontró el estado "pending" en la base de datos' }
+  }
+
+  console.log('✅ Estado pending encontrado:', estadoPending)
+
   const { data: orden, error: errorOrden } = await supabase
     .from('order')
-    .insert({ table_id: null, user_id: userId, status: 'pending', customer_id: customerId })
+    .insert({ table_id: null, user_id: userId, status: estadoPending.id, customer_id: customerId })
     .select('id')
     .single()
 

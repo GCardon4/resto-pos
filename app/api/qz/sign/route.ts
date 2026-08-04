@@ -1,32 +1,34 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { createSign } from 'crypto'
+import { firmadorQZ } from '@/lib/qz/firmador'
 
+// Firma petición para QZ Tray con node-forge
 export async function GET(req: NextRequest) {
-  const toSign = req.nextUrl.searchParams.get('request')
-  if (!toSign) {
-    return new NextResponse('Missing request parameter', { status: 400, headers: { 'Content-Type': 'text/plain' } })
-  }
-
-  const keyB64 = process.env.QZ_PRIVATE_KEY_B64
-  if (!keyB64) {
-    console.error('[QZ Sign] QZ_PRIVATE_KEY_B64 no está configurado en las variables de entorno')
-    return new NextResponse('ENV_MISSING: QZ_PRIVATE_KEY_B64 no configurado en el servidor', {
-      status: 500,
-      headers: { 'Content-Type': 'text/plain' },
+  const datosAFirmar = req.nextUrl.searchParams.get('request')
+  if (!datosAFirmar) {
+    return new NextResponse('Falta parámetro request', {
+      status: 400,
+      headers: { 'Content-Type': 'text/plain' }
     })
   }
 
   try {
-    const privateKey = Buffer.from(keyB64, 'base64').toString('utf-8')
-    const sign = createSign('RSA-SHA512')
-    sign.update(toSign)
-    const signature = sign.sign(privateKey, 'base64')
-    return new NextResponse(signature, {
+    const resultado = firmadorQZ.firmarPeticion(datosAFirmar)
+
+    if (!resultado.exito || !resultado.firma) {
+      console.error('[QZ Sign API] Error de firma:', resultado.error)
+      return new NextResponse(`ERROR_FIRMA: ${resultado.error}`, {
+        status: 500,
+        headers: { 'Content-Type': 'text/plain' },
+      })
+    }
+
+    return new NextResponse(resultado.firma, {
+      status: 200,
       headers: { 'Content-Type': 'text/plain' },
     })
-  } catch (e: any) {
-    console.error('[QZ Sign] Error al firmar:', e.message)
-    return new NextResponse(`SIGN_ERROR: ${e.message}`, {
+  } catch (error: any) {
+    console.error('[QZ Sign API] Excepción:', error.message)
+    return new NextResponse(`ERROR_SISTEMA: ${error.message}`, {
       status: 500,
       headers: { 'Content-Type': 'text/plain' },
     })

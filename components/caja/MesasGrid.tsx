@@ -391,8 +391,8 @@ export function MesasGrid({
     setItemsPedido(prev => prev.filter(i => i.productoId !== productoId))
   }
 
-  // Enviar ítems a cocina — si es domicilio sin orden activa, abre modal de datos primero
-  const handleEnviarCocina = () => {
+  // Confirmar pedido — crea la orden sin enviar a cocina
+  const handleConfirmarPedido = () => {
     if (itemsPedido.length === 0) return
     if (!mesaActiva && !esDomicilio) return
 
@@ -403,7 +403,7 @@ export function MesasGrid({
       return
     }
 
-    const itemsParaEnviar = itemsPedido.map(i => ({
+    const itemsParaConfirmar = itemsPedido.map(i => ({
       productoId: i.productoId,
       precio: i.precio,
       cantidad: i.cantidad,
@@ -413,7 +413,7 @@ export function MesasGrid({
 
     startTransition(async () => {
       if (ordenActivaId) {
-        const result = await agregarItemsAOrden(ordenActivaId, itemsParaEnviar)
+        const result = await agregarItemsAOrden(ordenActivaId, itemsParaConfirmar)
         if (result.error) {
           setErrorPedido(result.error)
         } else {
@@ -424,7 +424,7 @@ export function MesasGrid({
           setTimeout(() => setPedidoEnviado(null), 1800)
         }
       } else {
-        const result = await enviarPedidoCocina(mesaActiva!.id, userId, itemsParaEnviar, typeof numeroGps === 'number' ? numeroGps : null)
+        const result = await enviarPedidoCocina(mesaActiva!.id, userId, itemsParaConfirmar, typeof numeroGps === 'number' ? numeroGps : null)
         if (result.error) {
           setErrorPedido(result.error)
         } else {
@@ -610,7 +610,7 @@ export function MesasGrid({
       .map(i => `  • ${i.cantidad}x ${i.nombre} - $${(i.precio * i.cantidad).toLocaleString('es-CO')}`)
       .join('\n')
     const mensaje = [
-      `¡Hola ${infoDomicilio.nombre}! 🍗 *Queen Broaster*`,
+      `¡Hola ${infoDomicilio.nombre}! 🍗 *Restaurante El Punto de Laura*`,
       '',
       'Tu pedido está siendo preparado:',
       '',
@@ -730,9 +730,9 @@ export function MesasGrid({
                   className="py-3.5 rounded-2xl bg-tertiary text-on-tertiary font-display font-bold text-sm flex items-center justify-center gap-2 hover:brightness-110 active:scale-95 transition-all disabled:opacity-40 shadow-md"
                 >
                   <span className="material-symbols-outlined text-[20px]">
-                    {isPending ? 'hourglass_empty' : 'restaurant'}
+                    {isPending ? 'hourglass_empty' : 'check_circle'}
                   </span>
-                  {isPending ? 'Enviando...' : 'Enviar a Cocina'}
+                  {isPending ? 'Confirmando...' : 'Confirmar Pedido'}
                 </button>
               </div>
             </div>
@@ -970,7 +970,7 @@ export function MesasGrid({
           <div className="flex items-center gap-4">
             <div className="flex items-center gap-2">
               <span className="material-symbols-outlined text-primary text-[28px]">restaurant_menu</span>
-              <h1 className="font-display font-bold text-xl text-primary hidden sm:block">Queen Broaster</h1>
+              <h1 className="font-display font-bold text-xl text-primary hidden sm:block">Restaurante El Punto de Laura</h1>
             </div>
             <div className="h-6 w-px bg-surface-variant mx-1" />
             <button
@@ -1272,17 +1272,17 @@ export function MesasGrid({
               ) : (
                 <div className="flex flex-col gap-1">
 
-                  {/* Ítems ya en cocina */}
+                  {/* Ítems del pedido confirmado */}
                   {itemsEnCocina.length > 0 && (
                     <>
                       <div className="flex items-center gap-2 px-2 py-1.5 mb-1">
-                        <span className="material-symbols-outlined text-[16px] text-green-600">restaurant</span>
+                        <span className="material-symbols-outlined text-[16px] text-green-600">check_circle</span>
                         <span className="text-xs font-bold text-green-700 uppercase tracking-wider">
-                          En cocina ({itemsEnCocina.reduce((a, i) => a + i.cantidad, 0)} ítems)
+                          Confirmados ({itemsEnCocina.reduce((a, i) => a + i.cantidad, 0)} ítems)
                         </span>
                       </div>
                       {itemsEnCocina.map((item, idx) => (
-                        <div key={`cocina-${item.productoId}-${idx}`} className="flex flex-col gap-2 p-2.5 bg-green-50/50 rounded-xl border border-green-100">
+                        <div key={`cocina-${item.productoId}-${idx}`} className="flex flex-col gap-2 p-2.5 bg-primary/5 rounded-xl border border-primary/20">
                           <div className="flex items-center gap-3">
                             <div className="w-10 h-10 rounded-lg bg-surface-container-high overflow-hidden shrink-0 border border-surface-variant">
                               {item.imagen ? (
@@ -1313,7 +1313,7 @@ export function MesasGrid({
                                 const addon = addonMap.get(addonId)
                                 if (!addon) return null
                                 return (
-                                  <span key={addonId} className="flex items-center gap-0.5 bg-green-100 text-green-800 px-2 py-0.5 rounded-full text-[11px] font-medium">
+                                  <span key={addonId} className="flex items-center gap-0.5 bg-primary/10 text-primary px-2 py-0.5 rounded-full text-[11px] font-medium">
                                     <span className="material-symbols-outlined text-[11px]">add</span>
                                     {addon.name}
                                     {addon.price > 0 && <span className="opacity-70">+${addon.price.toLocaleString('es-CO')}</span>}
@@ -1518,7 +1518,7 @@ export function MesasGrid({
               {pedidoEnviado && (
                 <div className="flex items-center gap-2 bg-green-50 border border-green-200 text-green-800 px-3 py-2.5 rounded-xl mb-3 text-sm font-medium">
                   <span className="material-symbols-outlined text-green-600 text-[20px]">check_circle</span>
-                  Pedido #{pedidoEnviado} enviado a cocina
+                  Pedido #{pedidoEnviado} confirmado
                 </div>
               )}
 
@@ -1544,13 +1544,6 @@ export function MesasGrid({
                 </a>
               )}
 
-              {/* Feedback: pedido marcado listo */}
-              {ordenMarcadaLista && (
-                <div className="flex items-center gap-2 bg-green-50 border border-green-200 text-green-800 px-3 py-2.5 rounded-xl mb-3 text-sm font-medium">
-                  <span className="material-symbols-outlined text-green-600 text-[20px]" style={{ fontVariationSettings: "'FILL' 1" }}>check_circle</span>
-                  Pedido listo — salió de cocina. Mesa activa para más ítems o cobro.
-                </div>
-              )}
 
               <div className="grid grid-cols-2 gap-3">
                 <button
@@ -1567,43 +1560,18 @@ export function MesasGrid({
                   {esDomicilio ? 'Cobrar' : 'Pagar Cuenta'}
                 </button>
                 <button
-                  onClick={handleEnviarCocina}
+                  onClick={handleConfirmarPedido}
                   disabled={isPending || itemsPedido.length === 0}
                   className={`py-3 rounded-2xl font-display font-bold text-sm flex flex-col items-center justify-center gap-1 hover:brightness-110 active:scale-95 transition-all disabled:opacity-40 disabled:cursor-not-allowed shadow-md ${
                     esDomicilio ? 'bg-tertiary text-on-tertiary' : 'bg-primary text-on-primary'
                   }`}
                 >
                   <span className="material-symbols-outlined text-[20px]">
-                    {isPending ? 'hourglass_empty' : esDomicilio ? 'delivery_dining' : 'restaurant'}
+                    {isPending ? 'hourglass_empty' : 'check_circle'}
                   </span>
-                  {isPending ? 'Enviando...' : 'Enviar Cocina'}
+                  {isPending ? 'Confirmando...' : 'Confirmar Pedido'}
                 </button>
 
-                {/* Botón Imprimir Orden — solo si hay ítems en cocina */}
-                {!esDomicilio && itemsEnCocina.length > 0 && (
-                  <button
-                    onClick={handleImprimirOrden}
-                    className="col-span-2 py-2.5 rounded-xl bg-blue-600 text-white font-display font-bold text-sm flex items-center justify-center gap-1.5 hover:bg-blue-700 active:scale-95 transition-all shadow-sm"
-                    title="Imprimir orden para la cocina"
-                  >
-                    <span className="material-symbols-outlined text-[18px]">print</span>
-                    Imprimir Orden
-                  </button>
-                )}
-
-                {/* Botón Listo en Cocina — solo mesa con ítems en cocina */}
-                {!esDomicilio && itemsEnCocina.length > 0 && !ordenMarcadaLista && (
-                  <button
-                    onClick={handleMarcarListo}
-                    disabled={marcandoListo || isPending}
-                    className="col-span-2 py-2.5 rounded-xl bg-green-600 text-white font-display font-bold text-sm flex items-center justify-center gap-1.5 hover:bg-green-700 active:scale-95 transition-all disabled:opacity-40 shadow-sm"
-                  >
-                    <span className="material-symbols-outlined text-[18px]" style={{ fontVariationSettings: "'FILL' 1" }}>
-                      {marcandoListo ? 'hourglass_empty' : 'check_circle'}
-                    </span>
-                    {marcandoListo ? 'Marcando...' : 'Listo en Cocina'}
-                  </button>
-                )}
 
                 {/* Botón Cancelar Orden — si hay ítems sin enviar o en cocina */}
                 {(itemsPedido.length > 0 || (itemsEnCocina.length > 0 && !ordenMarcadaLista)) && (
@@ -1652,13 +1620,13 @@ export function MesasGrid({
                 Pagar
               </button>
               <button
-                onClick={handleEnviarCocina}
+                onClick={handleConfirmarPedido}
                 disabled={isPending || itemsPedido.length === 0}
                 className={`font-bold px-4 py-2.5 rounded-xl text-sm shadow-md hover:brightness-110 transition-all disabled:opacity-40 ${
                   esDomicilio ? 'bg-tertiary text-on-tertiary' : 'bg-primary text-on-primary'
                 }`}
               >
-                {isPending ? 'Enviando...' : 'Cocina'}
+                {isPending ? 'Confirmando...' : 'Confirmar'}
               </button>
               {mostrarBotonWa && (
                 <a
@@ -1689,7 +1657,7 @@ export function MesasGrid({
       <header className="sticky top-0 z-40 bg-surface border-b border-surface-variant px-4 sm:px-8 py-4 flex items-center justify-between shadow-sm">
         <div className="flex items-center gap-3">
           <span className="material-symbols-outlined text-primary text-[28px]">restaurant_menu</span>
-          <h1 className="font-display font-bold text-2xl text-primary hidden sm:block">Queen Broaster</h1>
+          <h1 className="font-display font-bold text-2xl text-primary hidden sm:block">Restaurante de Laura</h1>
         </div>
 
         {/* Pestañas de navegación: Mesas | Historial | Gastos */}

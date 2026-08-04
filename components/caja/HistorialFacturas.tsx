@@ -119,9 +119,9 @@ async function imprimirRecibo(ventaId: number): Promise<void> {
   </style>
 </head>
 <body>
-  <div class="center bold large">RESTAURANTE QUEEN BROASTER</div>
-  <div class="center small">Pollo Broaster y Comidas Rápidas</div>
-  <div class="center small">NIT: 43.473.914-2</div>
+  <div class="center bold large">RESTAURANTE EL PUNTO DE LAURA</div>
+  <div class="center small">Restaurante y Cafetería</div>
+  <div class="center small">NIT: 22.222.222-2</div>
   <div class="divider"></div>
   <div class="doc-type">${esFactura ? 'FACTURA DE VENTA' : 'RECIBO DE CAJA'}</div>
   <div class="row"><span>No.:</span><span class="bold">${numDoc}</span></div>
@@ -145,7 +145,7 @@ async function imprimirRecibo(ventaId: number): Promise<void> {
   <div class="row"><span>Forma de pago:</span><span>${venta.payment_method ?? ''}</span></div>
   <div class="divider"></div>
   <div class="center">¡Gracias por su preferencia!</div>
-  <div class="center small">Restaurante Queen Broaster</div>
+  <div class="center small">Restaurante El Punto de Laura</div>
 </body>
 </html>`
 
