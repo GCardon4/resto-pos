@@ -147,27 +147,10 @@ export async function enviarPedidoCocina(
 ) {
   const supabase = await createClient()
 
-  // Obtener el ID del estado 'pending' de la tabla status_tables
-  console.log('🔍 Buscando estado "pending" en status_tables...')
-  const { data: estadoPending, error: errorEstado } = await supabase
-    .from('status_tables')
-    .select('id')
-    .eq('name', 'pending')
-    .single()
-
-  console.log('📊 Resultado de búsqueda:', { estadoPending, errorEstado })
-
-  if (errorEstado || !estadoPending) {
-    console.log('❌ Error al encontrar estado pending:', errorEstado?.message || 'No se encontraron datos')
-    return { error: 'No se encontró el estado "pending" en la base de datos' }
-  }
-
-  console.log('✅ Estado pending encontrado:', estadoPending)
-
-  console.log('📝 Creando orden con estado ID:', estadoPending.id)
+  console.log('📝 Creando orden para mesa', mesaId)
   const { data: orden, error: errorOrden } = await supabase
     .from('order')
-    .insert({ table_id: mesaId, user_id: userId, status: estadoPending.id, gps: gps ?? null })
+    .insert({ table_id: mesaId, user_id: userId, status: 'pending', gps: gps ?? null })
     .select('id')
     .single()
 
@@ -226,26 +209,10 @@ export async function enviarDomicilioCocina(
 
   console.log('👤 Customer ID resuelto:', customerId)
 
-  // Obtener el ID del estado 'pending' de la tabla status_tables
-  console.log('🔍 Buscando estado "pending" en status_tables...')
-  const { data: estadoPending, error: errorEstado } = await supabase
-    .from('status_tables')
-    .select('id')
-    .eq('name', 'pending')
-    .single()
-
-  console.log('📊 Resultado de búsqueda:', { estadoPending, errorEstado })
-
-  if (errorEstado || !estadoPending) {
-    console.log('❌ Error al encontrar estado pending:', errorEstado?.message)
-    return { error: 'No se encontró el estado "pending" en la base de datos' }
-  }
-
-  console.log('✅ Estado pending encontrado:', estadoPending)
-
+  console.log('📝 Creando orden de domicilio para cliente', customerId)
   const { data: orden, error: errorOrden } = await supabase
     .from('order')
-    .insert({ table_id: null, user_id: userId, status: estadoPending.id, customer_id: customerId })
+    .insert({ table_id: null, user_id: userId, status: 'pending', customer_id: customerId })
     .select('id')
     .single()
 
