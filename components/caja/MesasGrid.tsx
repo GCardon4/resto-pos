@@ -13,6 +13,8 @@ import {
   procesarPago,
   procesarPagoDomicilio,
   marcarPedidoListo,
+  cancelarOrden,
+  actualizarItemsOrden,
 } from '@/modules/caja/actions'
 import { imprimirOrden } from '@/lib/impresion/ordenesImpresion'
 import { HistorialFacturas } from '@/components/caja/HistorialFacturas'
@@ -168,6 +170,8 @@ export function MesasGrid({
   // Listo en cocina desde caja — persistente hasta que se agreguen nuevos ítems
   const [ordenMarcadaLista, setOrdenMarcadaLista] = useState(false)
   const [marcandoListo, setMarcandoListo] = useState(false)
+  // Modo edición de los ítems ya confirmados
+  const [editandoOrden, setEditandoOrden] = useState(false)
 
   // Número de localizador GPS para sincronizar la mesa con el pedido
   const [numeroGps, setNumeroGps] = useState<number | ''>('')
@@ -265,6 +269,7 @@ export function MesasGrid({
     setItemsEnCocina([])
     setOrdenActivaId(null)
     setOrdenMarcadaLista(false)
+    setEditandoOrden(false)
     setBusquedaProducto('')
     setCategoriaFiltro(null)
     setErrorPedido(null)
@@ -306,6 +311,7 @@ export function MesasGrid({
     setItemsEnCocina([])
     setOrdenActivaId(null)
     setOrdenMarcadaLista(false)
+    setEditandoOrden(false)
     setNumeroGps('')
   }
 
@@ -575,21 +581,87 @@ export function MesasGrid({
 
   // Cancelar toda la orden (ítems nuevos y en cocina)
   const handleCancelarOrden = () => {
-    const tieneItems = itemsPedido.length > 0 || itemsEnCocina.length > 0
+    const tieneItems = itemsPedido.length > 0 || itemsEnCocina.length > 0 || !!ordenActivaId
     if (!tieneItems) return
 
     const mensaje = itemsEnCocina.length > 0
       ? '¿Cancelar toda la orden? Esto incluye los ítems ya en cocina.'
       : '¿Descartar todos los ítems sin enviar?'
 
-    if (confirm(mensaje)) {
+    if (!confirm(mensaje)) return
+
+    const limpiarLocal = () => {
       setItemsPedido([])
       setItemsEnCocina([])
       setOrdenActivaId(null)
       setOrdenMarcadaLista(false)
+      setEditandoOrden(false)
       setErrorPedido(null)
       setNumeroGps('')
     }
+
+    // Sin orden en BD solo se descarta lo local
+    if (!ordenActivaId) {
+      limpiarLocal()
+      return
+    }
+
+    // Con orden en BD: cancelarla y liberar la mesa
+    startTransition(async () => {
+      const res = await cancelarOrden(ordenActivaId)
+      if (res.error) {
+        setErrorPedido(res.error)
+        return
+      }
+      setMesaActiva(prev => prev ? { ...prev, status: false } : prev)
+      setMesasState(prev => prev.map(m => m.id === mesaActiva?.id ? { ...m, status: false } : m))
+      limpiarLocal()
+      router.refresh()
+    })
+  }
+
+  // Cambiar cantidad de un ítem ya confirmado (modo edición)
+  const cambiarCantidadConfirmado = (idx: number, delta: number) => {
+    setItemsEnCocina(prev =>
+      prev
+        .map((i, n) => n === idx ? { ...i, cantidad: i.cantidad + delta } : i)
+        .filter(i => i.cantidad > 0)
+    )
+  }
+
+  // Quitar un ítem ya confirmado (modo edición)
+  const eliminarItemConfirmado = (idx: number) => {
+    setItemsEnCocina(prev => prev.filter((_, n) => n !== idx))
+  }
+
+  // Guardar los cambios hechos a los ítems confirmados de la orden
+  const handleGuardarEdicion = () => {
+    if (!ordenActivaId) return
+    setErrorPedido(null)
+    startTransition(async () => {
+      const res = await actualizarItemsOrden(
+        ordenActivaId,
+        itemsEnCocina.map(i => ({
+          productoId: i.productoId,
+          precio: i.precio,
+          cantidad: i.cantidad,
+          notas: i.notas,
+          addonIds: i.addonIds,
+        }))
+      )
+      if (res.error) {
+        setErrorPedido(res.error)
+        return
+      }
+      setEditandoOrden(false)
+      setOrdenMarcadaLista(false)
+      // Si se quitaron todos los ítems la orden se canceló y la mesa quedó libre
+      if (itemsEnCocina.length === 0) {
+        setOrdenActivaId(null)
+        setMesaActiva(prev => prev ? { ...prev, status: false } : prev)
+        router.refresh()
+      }
+    })
   }
 
   // Generar URL de WhatsApp con el resumen del pedido de domicilio
@@ -1266,11 +1338,34 @@ export function MesasGrid({
                   {/* Ítems del pedido confirmado */}
                   {itemsEnCocina.length > 0 && (
                     <>
-                      <div className="flex items-center gap-2 px-2 py-1.5 mb-1">
-                        <span className="material-symbols-outlined text-[16px] text-green-600">check_circle</span>
-                        <span className="text-xs font-bold text-green-700 uppercase tracking-wider">
-                          Confirmados ({itemsEnCocina.reduce((a, i) => a + i.cantidad, 0)} ítems)
-                        </span>
+                      <div className="flex items-center justify-between gap-2 px-2 py-1.5 mb-1">
+                        <div className="flex items-center gap-2">
+                          <span className="material-symbols-outlined text-[16px] text-green-600">check_circle</span>
+                          <span className="text-xs font-bold text-green-700 uppercase tracking-wider">
+                            Confirmados ({itemsEnCocina.reduce((a, i) => a + i.cantidad, 0)} ítems)
+                          </span>
+                        </div>
+                        {ordenActivaId && (
+                          editandoOrden ? (
+                            <button
+                              onClick={handleGuardarEdicion}
+                              disabled={isPending}
+                              className="text-xs font-bold text-green-700 hover:bg-green-100 px-2 py-0.5 rounded transition-colors flex items-center gap-1 disabled:opacity-40"
+                            >
+                              <span className="material-symbols-outlined text-[14px]">save</span>
+                              Guardar cambios
+                            </button>
+                          ) : (
+                            <button
+                              onClick={() => setEditandoOrden(true)}
+                              disabled={isPending}
+                              className="text-xs font-bold text-primary hover:bg-primary/10 px-2 py-0.5 rounded transition-colors flex items-center gap-1 disabled:opacity-40"
+                            >
+                              <span className="material-symbols-outlined text-[14px]">edit</span>
+                              Editar
+                            </button>
+                          )
+                        )}
                       </div>
                       {itemsEnCocina.map((item, idx) => (
                         <div key={`cocina-${item.productoId}-${idx}`} className="flex flex-col gap-2 p-2.5 bg-primary/5 rounded-xl border border-primary/20">
@@ -1297,6 +1392,30 @@ export function MesasGrid({
                               </span>
                             </div>
                           </div>
+                          {/* Controles de edición del ítem confirmado */}
+                          {editandoOrden && (
+                            <div className="flex items-center justify-end gap-2 pl-12">
+                              <button
+                                onClick={() => cambiarCantidadConfirmado(idx, -1)}
+                                className="w-7 h-7 rounded-full border border-surface-variant flex items-center justify-center hover:bg-surface-container-high"
+                              >
+                                <span className="material-symbols-outlined text-[16px]">remove</span>
+                              </button>
+                              <span className="text-sm font-bold w-6 text-center">{item.cantidad}</span>
+                              <button
+                                onClick={() => cambiarCantidadConfirmado(idx, 1)}
+                                className="w-7 h-7 rounded-full border border-surface-variant flex items-center justify-center hover:bg-surface-container-high"
+                              >
+                                <span className="material-symbols-outlined text-[16px]">add</span>
+                              </button>
+                              <button
+                                onClick={() => eliminarItemConfirmado(idx)}
+                                className="w-7 h-7 rounded-full text-error flex items-center justify-center hover:bg-error/10"
+                              >
+                                <span className="material-symbols-outlined text-[16px]">delete</span>
+                              </button>
+                            </div>
+                          )}
                           {/* Complementos del ítem (solo lectura — ya enviados) */}
                           {item.addonIds.length > 0 && (
                             <div className="flex flex-wrap gap-1 pl-12">
@@ -1565,7 +1684,7 @@ export function MesasGrid({
 
 
                 {/* Botón Cancelar Orden — si hay ítems sin enviar o en cocina */}
-                {(itemsPedido.length > 0 || (itemsEnCocina.length > 0 && !ordenMarcadaLista)) && (
+                {(itemsPedido.length > 0 || itemsEnCocina.length > 0 || !!ordenActivaId) && (
                   <button
                     onClick={handleCancelarOrden}
                     disabled={isPending}

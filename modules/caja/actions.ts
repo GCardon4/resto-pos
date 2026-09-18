@@ -236,6 +236,7 @@ export async function obtenerOrdenActivaMesa(mesaId: number) {
     .from('order')
     .select('id, status, gps')
     .eq('table_id', mesaId)
+    .neq('status', 'cancelled')
     .order('created_at', { ascending: false })
     .limit(1)
     .maybeSingle()
@@ -301,6 +302,71 @@ export async function agregarItemsAOrden(ordenId: number, items: ItemPedido[]) {
     .in('status', ['ready'])
 
   revalidatePath('/caja')
+  return { error: null }
+}
+
+// Cancelar una orden completa — sale de cocina y libera la mesa si tiene una asignada
+export async function cancelarOrden(ordenId: number) {
+  const supabase = await createClient()
+
+  const { data: orden } = await supabase
+    .from('order')
+    .select('table_id')
+    .eq('id', ordenId)
+    .maybeSingle()
+
+  const { error: errorOrden } = await supabase
+    .from('order')
+    .update({ status: 'cancelled' })
+    .eq('id', ordenId)
+  if (errorOrden) return { error: errorOrden.message }
+
+  // Ítems cancelados dejan de aparecer en el display de cocina
+  await supabase
+    .from('order_items')
+    .update({ status: 'cancelled' })
+    .eq('order_id', ordenId)
+
+  if (orden?.table_id) {
+    const { error: errorMesa } = await supabase
+      .from('tables')
+      .update({ status: false })
+      .eq('id', orden.table_id)
+    if (errorMesa) return { error: errorMesa.message }
+  }
+
+  revalidatePath('/caja')
+  revalidatePath('/cocina')
+  return { error: null }
+}
+
+// Editar una orden existente — reemplaza todos sus ítems y complementos por los recibidos
+// Si quedan sin ítems, se cancela la orden y se libera la mesa
+export async function actualizarItemsOrden(ordenId: number, items: ItemPedido[]) {
+  if (items.length === 0) return cancelarOrden(ordenId)
+
+  const supabase = await createClient()
+
+  const { data: existentes } = await supabase
+    .from('order_items')
+    .select('id')
+    .eq('order_id', ordenId)
+  const idsExistentes = (existentes ?? []).map(i => i.id as number)
+
+  if (idsExistentes.length > 0) {
+    await supabase.from('order_item_adds_on').delete().in('order_item_id', idsExistentes)
+    const { error: errorBorrado } = await supabase.from('order_items').delete().eq('order_id', ordenId)
+    if (errorBorrado) return { error: errorBorrado.message }
+  }
+
+  const errorItems = await insertarItemsConComplementos(supabase, ordenId, items)
+  if (errorItems) return { error: errorItems }
+
+  // Vuelve a cocina para que vean los cambios
+  await supabase.from('order').update({ status: 'pending' }).eq('id', ordenId)
+
+  revalidatePath('/caja')
+  revalidatePath('/cocina')
   return { error: null }
 }
 
