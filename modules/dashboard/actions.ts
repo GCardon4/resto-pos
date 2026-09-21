@@ -1,20 +1,7 @@
 'use server'
 
 import { createClient } from '@/lib/supabase/server'
-
-// Zona horaria del negocio (Colombia) para agrupar ventas por día correctamente
-const ZONA_HORARIA = 'America/Bogota'
-
-// Clave de día local (YYYY-MM-DD) a partir de una fecha
-function claveDia(fecha: Date): string {
-  return fecha.toLocaleDateString('en-CA', { timeZone: ZONA_HORARIA })
-}
-
-// Etiqueta corta del día de la semana (Lun, Mar...) capitalizada
-function etiquetaDia(fecha: Date): string {
-  const txt = fecha.toLocaleDateString('es-CO', { weekday: 'short', timeZone: ZONA_HORARIA })
-  return txt.charAt(0).toUpperCase() + txt.slice(1, 3)
-}
+import { claveDiaLocal as claveDia, etiquetaDiaLocal as etiquetaDia } from '@/lib/fecha/zonaHoraria'
 
 function aNumero(valor: unknown): number {
   const n = typeof valor === 'number' ? valor : parseFloat(String(valor ?? 0))

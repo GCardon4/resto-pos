@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect, useTransition } from 'react'
+import { useState, useEffect, useRef, useTransition } from 'react'
 import { useRouter } from 'next/navigation'
 import Link from 'next/link'
 import { logoutAction } from '@/lib/auth/actions'
@@ -261,8 +261,13 @@ export function MesasGrid({
   const cantidadEnPedido = (productoId: number) =>
     itemsPedido.find(i => i.productoId === productoId)?.cantidad ?? 0
 
+  // Token de la última carga de orden solicitada — evita que una respuesta
+  // vieja (doble clic, red lenta) sobrescriba con datos vacíos la más reciente
+  const cargaOrdenRef = useRef(0)
+
   // Entrar a la vista de pedido de mesa — siempre busca orden activa (incluso si la mesa está libre)
   const seleccionarMesa = (mesa: Mesa) => {
+    const tokenActual = ++cargaOrdenRef.current
     setMesaActiva(mesa)
     setEsDomicilio(false)
     setItemsPedido([])
@@ -277,6 +282,8 @@ export function MesasGrid({
     setNumeroGps('')
     setCargandoOrden(true)
     obtenerOrdenActivaMesa(mesa.id).then(({ orden }) => {
+      // Descarta la respuesta si mientras tanto se seleccionó otra mesa
+      if (cargaOrdenRef.current !== tokenActual) return
       setCargandoOrden(false)
       if (orden) {
         setOrdenActivaId(orden.id)
@@ -289,6 +296,7 @@ export function MesasGrid({
 
   // Entrar a la vista de pedido de domicilio
   const iniciarDomicilio = () => {
+    cargaOrdenRef.current++ // invalida cualquier carga de mesa pendiente
     setEsDomicilio(true)
     setMesaActiva(null)
     setItemsPedido([])
@@ -305,6 +313,7 @@ export function MesasGrid({
   // Volver al grid
   const volverAMesas = () => {
     if (itemsPedido.length > 0 && !confirm('¿Descartar los ítems no enviados?')) return
+    cargaOrdenRef.current++ // invalida cualquier carga de mesa pendiente
     setMesaActiva(null)
     setEsDomicilio(false)
     setItemsPedido([])

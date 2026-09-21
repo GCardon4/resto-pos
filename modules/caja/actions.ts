@@ -150,7 +150,7 @@ export async function enviarPedidoCocina(
   console.log('📝 Creando orden para mesa', mesaId)
   const { data: orden, error: errorOrden } = await supabase
     .from('order')
-    .insert({ table_id: mesaId, user_id: userId, status: 'pending', gps: gps ?? null })
+    .insert({ table_id: mesaId, user_id: userId, status: 'pending', gps: gps ?? null, created_at: new Date().toISOString() })
     .select('id')
     .single()
 
@@ -212,7 +212,7 @@ export async function enviarDomicilioCocina(
   console.log('📝 Creando orden de domicilio para cliente', customerId)
   const { data: orden, error: errorOrden } = await supabase
     .from('order')
-    .insert({ table_id: null, user_id: userId, status: 'pending', customer_id: customerId })
+    .insert({ table_id: null, user_id: userId, status: 'pending', customer_id: customerId, created_at: new Date().toISOString() })
     .select('id')
     .single()
 
@@ -237,7 +237,10 @@ export async function obtenerOrdenActivaMesa(mesaId: number) {
     .select('id, status, gps')
     .eq('table_id', mesaId)
     .neq('status', 'cancelled')
-    .order('created_at', { ascending: false })
+    // Se ordena por id (autoincremental) y no por created_at: la columna
+    // created_at de 'order' no se está guardando (llega null), así que
+    // ordenar por fecha devolvía una orden arbitraria — a veces una ya pagada
+    .order('id', { ascending: false })
     .limit(1)
     .maybeSingle()
 
@@ -250,7 +253,12 @@ export async function obtenerOrdenActivaMesa(mesaId: number) {
     .eq('order_id', ultimaOrden.id)
     .maybeSingle()
 
-  if (venta) return { error: null, orden: null }
+  if (venta) {
+    // Orden ya pagada — si la mesa quedó marcada como ocupada (ej: falló el
+    // último paso de procesarPago), la liberamos ahora para no dejarla atascada
+    await supabase.from('tables').update({ status: false }).eq('id', mesaId)
+    return { error: null, orden: null }
+  }
 
   const { data: items } = await supabase
     .from('order_items')

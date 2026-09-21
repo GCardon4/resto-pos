@@ -1,6 +1,7 @@
 // Utilidad para exportar ventas a Excel
 
 import { DiaVenta, VentaPorMetodoPago, VentaHistorial } from '@/modules/dashboard/actions'
+import { formatearFechaHora } from '@/lib/fecha/zonaHoraria'
 
 interface DatosExportacion {
   rangoTexto: string
@@ -18,7 +19,7 @@ function generarCSV(datos: DatosExportacion): string {
   // Encabezado general
   lineas.push('REPORTE DE VENTAS - QUEEN BROASTER')
   lineas.push(`Período: ${datos.rangoTexto}`)
-  lineas.push(`Fecha de generación: ${new Date().toLocaleString('es-CO')}`)
+  lineas.push(`Fecha de generación: ${formatearFechaHora(new Date())}`)
   lineas.push('')
 
   // Resumen general
@@ -47,7 +48,7 @@ function generarCSV(datos: DatosExportacion): string {
   lineas.push('HISTORIAL DE VENTAS (Últimas 10)')
   lineas.push('ID,Total ($),Método de pago,Origen,Cliente,Factura,Fecha')
   for (const venta of datos.historial) {
-    const fecha = new Date(venta.fecha).toLocaleString('es-CO')
+    const fecha = formatearFechaHora(venta.fecha)
     const cliente = venta.cliente ? `"${venta.cliente}"` : 'Consumidor final'
     const factura = venta.factura || 'N/A'
     lineas.push(`${venta.id},$${Math.round(venta.total).toLocaleString('es-CO')},${venta.metodoPago},${venta.mesa},${cliente},${factura},${fecha}`)

@@ -3,6 +3,7 @@ import { createClient } from '@/lib/supabase/server'
 import { obtenerMetricasDashboard } from '@/modules/dashboard/actions'
 import { SelectorRango } from '@/components/admin/dashboard/SelectorRango'
 import { VentasPorMetodoPago } from '@/components/admin/dashboard/VentasPorMetodoPago'
+import { ZONA_HORARIA } from '@/lib/fecha/zonaHoraria'
 
 // Formatear un valor numérico como moneda colombiana sin decimales
 const formatoMoneda = (n: number) => `$${Math.round(n).toLocaleString('es-CO')}`
@@ -355,7 +356,7 @@ export default async function AdminPage({ searchParams }: { searchParams: Promis
                       </span>
                     </td>
                     <td className="px-6 py-4 text-on-surface-variant text-sm">
-                      {new Date(v.fecha).toLocaleString('es-CO', { day: '2-digit', month: 'short', hour: '2-digit', minute: '2-digit' })}
+                      {new Date(v.fecha).toLocaleString('es-CO', { day: '2-digit', month: 'short', hour: '2-digit', minute: '2-digit', timeZone: ZONA_HORARIA })}
                     </td>
                     <td className="px-6 py-4 text-right font-display font-bold text-primary">{formatoMoneda(v.total)}</td>
                   </tr>

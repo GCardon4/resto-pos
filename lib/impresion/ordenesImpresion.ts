@@ -1,5 +1,7 @@
 // Utilidad para imprimir órdenes directamente a la impresora térmica sin diálogos emergentes
 
+import { ZONA_HORARIA } from '@/lib/fecha/zonaHoraria'
+
 export interface ItemImpresion {
   nombre: string
   cantidad: number
@@ -27,6 +29,7 @@ export const imprimirOrden = (datos: DatosImpresionOrden) => {
   const horaFormato = datos.horaInicio.toLocaleTimeString('es-CO', {
     hour: '2-digit',
     minute: '2-digit',
+    timeZone: ZONA_HORARIA,
   })
 
   // Crear contenido HTML para impresión

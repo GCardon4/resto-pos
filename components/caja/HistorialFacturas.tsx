@@ -2,6 +2,7 @@
 
 import { useState, useEffect, useCallback } from 'react'
 import { obtenerHistorialFacturas, obtenerDetalleFactura } from '@/modules/caja/actions'
+import { formatearFechaHora } from '@/lib/fecha/zonaHoraria'
 
 interface VentaResumen {
   id: number
@@ -69,10 +70,7 @@ async function imprimirRecibo(ventaId: number): Promise<void> {
   const numDoc = numeroRecibo(venta.id, invoiceNumber)
   const esFactura = !!invoiceNumber
   const esAnonimo = !cliente || cliente.full_name === 'Anónimo' || cliente.full_name === 'Consumidor final'
-  const fecha = new Date(venta.created_at).toLocaleString('es-CO', {
-    dateStyle: 'short',
-    timeStyle: 'short',
-  })
+  const fecha = formatearFechaHora(venta.created_at)
 
   const lineasItems = items
     .map(
@@ -121,7 +119,7 @@ async function imprimirRecibo(ventaId: number): Promise<void> {
 <body>
   <div class="center bold large">RESTAURANTE EL PUNTO DE LAURA</div>
   <div class="center small">Restaurante y Cafetería</div>
-  <div class="center small">NIT: 22.222.222-2</div>
+  <div class="center small">NIT: 70.907.024-5</div>
   <div class="divider"></div>
   <div class="doc-type">${esFactura ? 'FACTURA DE VENTA' : 'RECIBO DE CAJA'}</div>
   <div class="row"><span>No.:</span><span class="bold">${numDoc}</span></div>
@@ -301,10 +299,7 @@ export function HistorialFacturas() {
               const numDoc = numeroRecibo(venta.id, invNum)
               const esFactura = !!invNum
               const esAnonimo = !cliente || cliente.full_name === 'Anónimo' || cliente.full_name === 'Consumidor final'
-              const fecha = new Date(venta.created_at).toLocaleString('es-CO', {
-                dateStyle: 'short',
-                timeStyle: 'short',
-              })
+              const fecha = formatearFechaHora(venta.created_at)
 
               return (
                 <div

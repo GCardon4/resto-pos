@@ -5,6 +5,7 @@ import { useRouter } from 'next/navigation'
 import Link from 'next/link'
 import { createClient } from '@/lib/supabase/client'
 import { marcarOrdenLista } from '@/modules/cocina/actions'
+import { ZONA_HORARIA } from '@/lib/fecha/zonaHoraria'
 
 interface AddonOrden {
   id: number
@@ -42,7 +43,7 @@ function RelojDisplay() {
   useEffect(() => {
     const actualizar = () =>
       setHora(new Date().toLocaleTimeString('es-CO', {
-        hour: '2-digit', minute: '2-digit', second: '2-digit', hour12: false,
+        hour: '2-digit', minute: '2-digit', second: '2-digit', hour12: false, timeZone: ZONA_HORARIA,
       }))
     actualizar()
     const id = setInterval(actualizar, 1000)

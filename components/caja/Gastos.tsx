@@ -300,7 +300,10 @@ export function Gastos() {
             </div>
 
             {gastosFiltrados.map(gasto => {
-              const fecha = new Date(`${gasto.expense_date}T00:00:00`).toLocaleDateString('es-CO', {
+              // expense_date es solo fecha (sin hora) — se arma con año/mes/día explícitos
+              // (constructor numérico = componentes locales) para que nunca se corra un día
+              const [anio, mes, dia] = gasto.expense_date.split('-').map(Number)
+              const fecha = new Date(anio, mes - 1, dia).toLocaleDateString('es-CO', {
                 day: '2-digit', month: 'short', year: 'numeric',
               })
 
