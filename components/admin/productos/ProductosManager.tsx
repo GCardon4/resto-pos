@@ -1,54 +1,33 @@
 'use client'
 
-import { useState, useTransition } from 'react'
+import { useRef, useState, useTransition } from 'react'
 import { useRouter } from 'next/navigation'
 import { crearProducto, actualizarProducto, eliminarProducto, crearCategoria } from '@/modules/productos/actions'
+import { subirImagenProducto, eliminarImagenProducto } from '@/modules/productos/imagenes'
 
 interface Categoria { id: number; name: string }
 interface Producto { id: number; name: string; sku: number | null; price: number; cost: number; description: string | null; category_id: number | null; stock: number; cook: boolean; image_url: string | null }
 interface FormProducto { nombre: string; sku: string; precio: string; costo: string; descripcion: string; categoriaId: string; stock: string; cocina: boolean; imagen: string }
+interface ImagenProducto { archivo: string; etiqueta: string }
 
 const FORM_VACIO: FormProducto = { nombre: '', sku: '', precio: '', costo: '', descripcion: '', categoriaId: '', stock: '0', cocina: false, imagen: '' }
+const TAMANO_MAXIMO_MB = 2
 
-const IMAGENES_PRODUCTOS = [
-  { archivo: '/products/desayuno-dia.png', etiqueta: 'Desayuno' },
-  { archivo: '/products/menu-dia.png', etiqueta: 'Menú del Día' },
-  { archivo: '/products/bebidas.png', etiqueta: 'Bebidas' },
-  { archivo: '/products/pilsen.png', etiqueta: 'pilsen' },
-  { archivo: '/products/poker.png', etiqueta: 'poker' },
-  { archivo: '/products/milo.png', etiqueta: 'milo' },
-  { archivo: '/products/agua.png', etiqueta: 'agua' },
-  { archivo: '/products/aguila.png', etiqueta: 'aguila' },
-  { archivo: '/products/mazamorra.png', etiqueta: 'mazamorra' },
-  { archivo: '/products/torta-pescado.png', etiqueta: 'torta-pescado' },
-  { archivo: '/products/torta-carne.png', etiqueta: 'torta-carne' },
-  { archivo: '/products/tamal.png', etiqueta: 'tamal' },
-  { archivo: '/products/sodas.png', etiqueta: 'Sodas' },
-  { archivo: '/products/lemonade.png', etiqueta: 'Limonada' },
-  { archivo: '/products/te.png', etiqueta: 'Te o Aromatica' },
-  { archivo: '/products/coffee.png', etiqueta: 'Cafe' },
-  { archivo: '/products/beer.png', etiqueta: 'Cerveza' },
-  { archivo: '/products/juice.png', etiqueta: 'Jugo' },
-  { archivo: '/products/vive100.png', etiqueta: 'vive100' },
-  { archivo: '/products/bunuelo.png', etiqueta: 'bunuelo' },
-  { archivo: '/products/almojabana.png', etiqueta: 'almojabana' },
-  { archivo: '/products/alqueria-galaxy.png', etiqueta: 'alqueria-galaxy' },
-  { archivo: '/products/alqueria-hojuela.png', etiqueta: 'alqueria-hojuela' },
-  { archivo: '/products/alqueria-mm.png', etiqueta: 'alqueria-mm' },
-  { archivo: '/products/alqueria-milo.png', etiqueta: 'alqueria-milo' },
-  { archivo: '/products/alqueria-cookie.png', etiqueta: 'alqueria-cookie' },
-  { archivo: '/products/papas-limon.png', etiqueta: 'papas-limon' },
-  { archivo: '/products/papas-natural.png', etiqueta: 'papas-natural' },
-  { archivo: '/products/papas-bbq.png', etiqueta: 'papas-bbq' },
-  { archivo: '/products/panaderia.png', etiqueta: 'panaderia' },
-  { archivo: '/products/pollo-entero.png', etiqueta: 'Pollo Entero' },
-  { archivo: '/products/pollo-cuarto.png', etiqueta: 'Pollo Cuarto' },
-  { archivo: '/products/pollo-medio.png', etiqueta: 'Pollo Medio' },
-  { archivo: '/products/pollo-presa.png', etiqueta: 'Pollo Presa' },
-]
+// Convierte un archivo de imagen a webp usando canvas (sin dependencias en el servidor)
+async function convertirAWebp(archivo: File): Promise<string> {
+  const bitmap = await createImageBitmap(archivo)
+  const canvas = document.createElement('canvas')
+  canvas.width = bitmap.width
+  canvas.height = bitmap.height
+  const ctx = canvas.getContext('2d')
+  if (!ctx) throw new Error('No se pudo procesar la imagen')
+  ctx.drawImage(bitmap, 0, 0)
+  const dataUrl = canvas.toDataURL('image/webp', 0.85)
+  return dataUrl.split(',')[1]
+}
 
 // Gestor CRUD de productos del restaurante
-export function ProductosManager({ productos, categorias }: { productos: Producto[]; categorias: Categoria[] }) {
+export function ProductosManager({ productos, categorias, imagenes }: { productos: Producto[]; categorias: Categoria[]; imagenes: ImagenProducto[] }) {
   const router = useRouter()
   const [modo, setModo] = useState<'lista' | 'crear' | 'editar'>('lista')
   const [editando, setEditando] = useState<Producto | null>(null)
@@ -58,6 +37,9 @@ export function ProductosManager({ productos, categorias }: { productos: Product
   const [nuevaCategoria, setNuevaCategoria] = useState('')
   const [mostrarFormCat, setMostrarFormCat] = useState(false)
   const [errorCategoria, setErrorCategoria] = useState<string | null>(null)
+  const [subiendoImagen, setSubiendoImagen] = useState(false)
+  const [errorImagen, setErrorImagen] = useState<string | null>(null)
+  const inputArchivoRef = useRef<HTMLInputElement>(null)
 
   const abrirCrear = () => { setForm(FORM_VACIO); setEditando(null); setErrorMsg(null); setModo('crear') }
   const abrirEditar = (p: Producto) => {
@@ -82,6 +64,39 @@ export function ProductosManager({ productos, categorias }: { productos: Product
   const handleEliminar = (id: number, nombre: string) => {
     if (!confirm(`¿Eliminar "${nombre}"?`)) return
     startTransition(async () => { const result = await eliminarProducto(id); if (result?.error) setErrorMsg(result.error) })
+  }
+
+  const handleSubirImagen = async (e: { target: HTMLInputElement }) => {
+    const archivo = e.target.files?.[0]
+    if (inputArchivoRef.current) inputArchivoRef.current.value = ''
+    if (!archivo) return
+    if (archivo.size > TAMANO_MAXIMO_MB * 1024 * 1024) { setErrorImagen(`La imagen supera ${TAMANO_MAXIMO_MB}MB`); return }
+    setErrorImagen(null)
+    setSubiendoImagen(true)
+    try {
+      const base64 = await convertirAWebp(archivo)
+      const nombre = archivo.name.replace(/\.[^.]+$/, '')
+      const result = await subirImagenProducto(nombre, base64)
+      if (result?.error) { setErrorImagen(result.error); return }
+      if (result?.archivo) setForm(f => ({ ...f, imagen: result.archivo! }))
+      router.refresh()
+    } catch {
+      setErrorImagen('No se pudo procesar la imagen')
+    } finally {
+      setSubiendoImagen(false)
+    }
+  }
+
+  const handleEliminarImagen = (archivo: string) => {
+    if (!confirm('¿Eliminar esta imagen?')) return
+    startTransition(async () => {
+      const result = await eliminarImagenProducto(archivo)
+      if (result?.error) setErrorImagen(result.error)
+      else {
+        if (form.imagen === archivo) setForm(f => ({ ...f, imagen: '' }))
+        router.refresh()
+      }
+    })
   }
 
   const handleCrearCategoria = (e: { preventDefault(): void }) => {
@@ -186,22 +201,40 @@ export function ProductosManager({ productos, categorias }: { productos: Product
           </div>
           {/* Selector de imagen del producto */}
           <div className="sm:col-span-2 lg:col-span-3">
-            <label className="block text-xs font-semibold text-on-surface-variant mb-2 uppercase tracking-wide">Imagen del Producto</label>
+            <div className="flex items-center justify-between mb-2">
+              <label className="block text-xs font-semibold text-on-surface-variant uppercase tracking-wide">Imagen del Producto</label>
+              <div className="flex items-center gap-2">
+                <input ref={inputArchivoRef} type="file" accept="image/*" onChange={handleSubirImagen} className="hidden" id="subir-imagen-producto" />
+                <label htmlFor="subir-imagen-producto" className={`text-xs border border-surface-variant text-on-surface-variant hover:bg-surface-container-high px-3 py-1.5 rounded-lg transition-colors cursor-pointer ${subiendoImagen ? 'opacity-50 pointer-events-none' : ''}`}>
+                  {subiendoImagen ? 'Subiendo...' : 'Subir imagen'}
+                </label>
+              </div>
+            </div>
+            {errorImagen && <p className="mb-2 text-error text-xs bg-error-container px-3 py-1.5 rounded-lg">{errorImagen}</p>}
             <div className="grid grid-cols-4 sm:grid-cols-8 gap-2">
-              {IMAGENES_PRODUCTOS.map(img => (
-                <button
-                  key={img.archivo}
-                  type="button"
-                  onClick={() => setForm(f => ({ ...f, imagen: f.imagen === img.archivo ? '' : img.archivo }))}
-                  className={`relative aspect-square rounded-xl border-2 overflow-hidden transition-all ${form.imagen === img.archivo ? 'border-primary ring-2 ring-primary/30' : 'border-surface-variant hover:border-outline'}`}
-                >
-                  <img src={img.archivo} alt={img.etiqueta} className="w-full h-full object-cover" />
-                  {form.imagen === img.archivo && (
-                    <div className="absolute inset-0 bg-primary/20 flex items-center justify-center">
-                      <span className="material-symbols-outlined text-primary text-lg">check_circle</span>
-                    </div>
-                  )}
-                </button>
+              {imagenes.map(img => (
+                <div key={img.archivo} className="relative group">
+                  <button
+                    type="button"
+                    onClick={() => setForm(f => ({ ...f, imagen: f.imagen === img.archivo ? '' : img.archivo }))}
+                    className={`relative aspect-square w-full rounded-xl border-2 overflow-hidden transition-all ${form.imagen === img.archivo ? 'border-primary ring-2 ring-primary/30' : 'border-surface-variant hover:border-outline'}`}
+                  >
+                    <img src={img.archivo} alt={img.etiqueta} className="w-full h-full object-cover" />
+                    {form.imagen === img.archivo && (
+                      <div className="absolute inset-0 bg-primary/20 flex items-center justify-center">
+                        <span className="material-symbols-outlined text-primary text-lg">check_circle</span>
+                      </div>
+                    )}
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => handleEliminarImagen(img.archivo)}
+                    title="Eliminar imagen"
+                    className="absolute -top-1.5 -right-1.5 w-5 h-5 rounded-full bg-error text-on-error flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity"
+                  >
+                    <span className="material-symbols-outlined text-[14px]">close</span>
+                  </button>
+                </div>
               ))}
             </div>
             {form.imagen && (
