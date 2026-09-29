@@ -5,6 +5,7 @@ import { useRouter } from 'next/navigation'
 import Link from 'next/link'
 import { logoutAction } from '@/lib/auth/actions'
 import { createClient } from '@/lib/supabase/client'
+import { useCompany } from '@/lib/context/CompanyContext'
 import {
   enviarPedidoCocina,
   enviarDomicilioCocina,
@@ -96,6 +97,8 @@ export function MesasGrid({
 }) {
   const router = useRouter()
   const [isPending, startTransition] = useTransition()
+  const empresa = useCompany()
+  const nombreEmpresa = empresa?.name || 'Restaurante El Punto de Laura'
 
   // Estado mesas — copia local del prop para poder mutarla desde realtime
   const [mesasState, setMesasState] = useState<Mesa[]>(mesas)
@@ -682,7 +685,7 @@ export function MesasGrid({
       .map(i => `  • ${i.cantidad}x ${i.nombre} - $${(i.precio * i.cantidad).toLocaleString('es-CO')}`)
       .join('\n')
     const mensaje = [
-      `¡Hola ${infoDomicilio.nombre}! 🍗 *Restaurante El Punto de Laura*`,
+      `¡Hola ${infoDomicilio.nombre}! 🍗 *${nombreEmpresa}*`,
       '',
       'Tu pedido está siendo preparado:',
       '',
@@ -1042,7 +1045,7 @@ export function MesasGrid({
           <div className="flex items-center gap-4">
             <div className="flex items-center gap-2">
               <span className="material-symbols-outlined text-primary text-[28px]">restaurant_menu</span>
-              <h1 className="font-display font-bold text-xl text-primary hidden sm:block">Restaurante El Punto de Laura</h1>
+              <h1 className="font-display font-bold text-xl text-primary hidden sm:block">{nombreEmpresa}</h1>
             </div>
             <div className="h-6 w-px bg-surface-variant mx-1" />
             <button
@@ -1776,7 +1779,7 @@ export function MesasGrid({
       <header className="sticky top-0 z-40 bg-surface border-b border-surface-variant px-4 sm:px-8 py-4 flex items-center justify-between shadow-sm">
         <div className="flex items-center gap-3">
           <span className="material-symbols-outlined text-primary text-[28px]">restaurant_menu</span>
-          <h1 className="font-display font-bold text-2xl text-primary hidden sm:block">Restaurante de Laura</h1>
+          <h1 className="font-display font-bold text-2xl text-primary hidden sm:block">{nombreEmpresa}</h1>
         </div>
 
         {/* Pestañas de navegación: Mesas | Historial | Gastos */}

@@ -43,6 +43,24 @@ Este esquema soporta múltiples clientes que presentan visualizaciones y clics c
 
 ---
 
+
+
+## company (Empresa)
+
+| Campo      | Tipo | Descripción            |
+| ---------- | ---- | ---------------------- |
+| id         | int8 | PK                     |
+| created_at | date | Fecha de creación      |
+| name       | text | Nombre de la Empresa   |
+| nit		 | text | Nit				     |
+| address	 | text | Dirección 		     |
+| phone		 | text | Teléfono Admin	     |
+| nit		 | text | Nit				     |
+| payment	 | bool | Pago					 |
+
+---
+
+
 ## customer (clientes)
 
 

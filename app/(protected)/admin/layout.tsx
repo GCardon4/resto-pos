@@ -1,5 +1,6 @@
 import { redirect } from 'next/navigation'
 import { createClient } from '@/lib/supabase/server'
+import { createAdminClient } from '@/lib/supabase/admin'
 import { AdminNav } from '@/components/admin/AdminNav'
 import { ROLES } from '@/types'
 
@@ -21,6 +22,9 @@ export default async function AdminLayout({ children }: { children: React.ReactN
 
   const nombreUsuario = profile?.full_name || user.email || 'Admin'
 
+  const { data: empresa } = await createAdminClient().from('company').select('name').limit(1).maybeSingle()
+  const nombreEmpresa = empresa?.name || 'Resto-POS'
+
   return (
     <div className="min-h-screen bg-surface text-on-surface">
       <AdminNav nombreUsuario={nombreUsuario} />
@@ -33,7 +37,7 @@ export default async function AdminLayout({ children }: { children: React.ReactN
           {/* Logo visible solo en móvil */}
           <div className="flex items-center gap-2 lg:hidden">
             <span className="material-symbols-outlined text-primary text-[22px] filled-icon">restaurant_menu</span>
-            <span className="font-display font-bold text-sm text-primary">Resto-POS</span>
+            <span className="font-display font-bold text-sm text-primary truncate max-w-[160px]">{nombreEmpresa}</span>
           </div>
           <div className="hidden lg:block" />
 

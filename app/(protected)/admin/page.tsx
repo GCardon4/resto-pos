@@ -3,6 +3,7 @@ import { createClient } from '@/lib/supabase/server'
 import { obtenerMetricasDashboard } from '@/modules/dashboard/actions'
 import { SelectorRango } from '@/components/admin/dashboard/SelectorRango'
 import { VentasPorMetodoPago } from '@/components/admin/dashboard/VentasPorMetodoPago'
+import { BalanceMensualModal } from '@/components/admin/dashboard/BalanceMensualModal'
 import { ZONA_HORARIA } from '@/lib/fecha/zonaHoraria'
 
 // Formatear un valor numérico como moneda colombiana sin decimales
@@ -106,6 +107,40 @@ export default async function AdminPage({ searchParams }: { searchParams: Promis
         </div>
         <SelectorRango rango={rango} />
       </div>
+
+       {/* Accesos rápidos */}
+      <section>
+        <h3 className="font-display font-semibold text-xs text-on-surface-variant uppercase tracking-wider mb-4">
+          Accesos Rápidos
+        </h3>
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+          <BalanceMensualModal />
+          
+          {[
+            { titulo: 'Gestionar Mesas',     desc: 'Crea y organiza las mesas del restaurante', href: '/admin/mesas',     icono: 'table_restaurant' },
+            { titulo: 'Gestionar Productos', desc: 'Administra el menú, precios y categorías',   href: '/admin/productos', icono: 'fastfood'          },
+            { titulo: 'Gestionar Usuarios',  desc: 'Controla el acceso y roles del personal',    href: '/admin/usuarios',  icono: 'group'             },
+          ].map(({ titulo, desc, href, icono }) => (
+            <Link
+              key={titulo}
+              href={href}
+              className="group bg-surface-container-lowest hover:bg-surface-container-low border border-surface-variant hover:border-primary/20 rounded-xl p-5 transition-all flex items-start gap-4"
+            >
+              <div className="p-2.5 bg-surface-container rounded-lg text-on-surface-variant group-hover:bg-primary/10 group-hover:text-primary transition-colors shrink-0">
+                <span className="material-symbols-outlined text-[22px]">{icono}</span>
+              </div>
+              <div>
+                <h4 className="font-display font-semibold text-sm text-on-surface group-hover:text-primary transition-colors mb-1">
+                  {titulo}
+                </h4>
+                <p className="text-xs text-on-surface-variant">{desc}</p>
+              </div>
+            </Link>
+          ))}
+          
+        </div>
+      </section>
+
 
       {/* Tarjetas financieras */}
       <section className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
@@ -373,35 +408,7 @@ export default async function AdminPage({ searchParams }: { searchParams: Promis
         )}
       </section>
 
-      {/* Accesos rápidos */}
-      <section>
-        <h3 className="font-display font-semibold text-xs text-on-surface-variant uppercase tracking-wider mb-4">
-          Accesos Rápidos
-        </h3>
-        <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-          {[
-            { titulo: 'Gestionar Mesas',     desc: 'Crea y organiza las mesas del restaurante', href: '/admin/mesas',     icono: 'table_restaurant' },
-            { titulo: 'Gestionar Productos', desc: 'Administra el menú, precios y categorías',   href: '/admin/productos', icono: 'fastfood'          },
-            { titulo: 'Gestionar Usuarios',  desc: 'Controla el acceso y roles del personal',    href: '/admin/usuarios',  icono: 'group'             },
-          ].map(({ titulo, desc, href, icono }) => (
-            <Link
-              key={titulo}
-              href={href}
-              className="group bg-surface-container-lowest hover:bg-surface-container-low border border-surface-variant hover:border-primary/20 rounded-xl p-5 transition-all flex items-start gap-4"
-            >
-              <div className="p-2.5 bg-surface-container rounded-lg text-on-surface-variant group-hover:bg-primary/10 group-hover:text-primary transition-colors shrink-0">
-                <span className="material-symbols-outlined text-[22px]">{icono}</span>
-              </div>
-              <div>
-                <h4 className="font-display font-semibold text-sm text-on-surface group-hover:text-primary transition-colors mb-1">
-                  {titulo}
-                </h4>
-                <p className="text-xs text-on-surface-variant">{desc}</p>
-              </div>
-            </Link>
-          ))}
-        </div>
-      </section>
+     
     </div>
   )
 }

@@ -42,3 +42,17 @@ export function etiquetaDiaLocal(fecha: Date | string): string {
   const txt = d.toLocaleDateString('es-CO', { weekday: 'short', timeZone: ZONA_HORARIA })
   return txt.charAt(0).toUpperCase() + txt.slice(1, 3)
 }
+
+// Clave de mes local (YYYY-MM) para agrupar por mes del negocio, no por UTC
+export function claveMesLocal(fecha: Date | string): string {
+  const d = typeof fecha === 'string' ? new Date(fecha) : fecha
+  return d.toLocaleDateString('en-CA', { timeZone: ZONA_HORARIA, year: 'numeric', month: '2-digit' }).slice(0, 7)
+}
+
+// Etiqueta de mes (ej: "Septiembre 2026") a partir de una clave YYYY-MM
+export function etiquetaMes(claveMes: string): string {
+  const [anio, mes] = claveMes.split('-').map(Number)
+  const d = new Date(anio, mes - 1, 1)
+  const txt = d.toLocaleDateString('es-CO', { month: 'long', year: 'numeric' })
+  return txt.charAt(0).toUpperCase() + txt.slice(1)
+}

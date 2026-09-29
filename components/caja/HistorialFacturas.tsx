@@ -3,6 +3,7 @@
 import { useState, useEffect, useCallback } from 'react'
 import { obtenerHistorialFacturas, obtenerDetalleFactura } from '@/modules/caja/actions'
 import { formatearFechaHora } from '@/lib/fecha/zonaHoraria'
+import { useCompany, type Empresa } from '@/lib/context/CompanyContext'
 
 interface VentaResumen {
   id: number
@@ -54,7 +55,7 @@ interface VentaDetalle {
 }
 
 // Generar HTML del recibo y enviarlo directo a QZ o fallback a ventana del navegador
-async function imprimirRecibo(ventaId: number): Promise<void> {
+async function imprimirRecibo(ventaId: number, empresa: Empresa | null): Promise<void> {
   const res = await obtenerDetalleFactura(ventaId)
   if (res.error || !res.factura) {
     alert('Error al obtener los datos de la venta')
@@ -71,6 +72,8 @@ async function imprimirRecibo(ventaId: number): Promise<void> {
   const esFactura = !!invoiceNumber
   const esAnonimo = !cliente || cliente.full_name === 'Anónimo' || cliente.full_name === 'Consumidor final'
   const fecha = formatearFechaHora(venta.created_at)
+  const nombreEmpresa = empresa?.name || 'Restaurante El Punto de Laura'
+  const nitEmpresa = empresa?.nit || '70.907.024-5'
 
   const lineasItems = items
     .map(
@@ -117,9 +120,9 @@ async function imprimirRecibo(ventaId: number): Promise<void> {
   </style>
 </head>
 <body>
-  <div class="center bold large">RESTAURANTE EL PUNTO DE LAURA</div>
-  <div class="center small">Restaurante y Cafetería</div>
-  <div class="center small">NIT: 70.907.024-5</div>
+  <div class="center bold large">${nombreEmpresa.toUpperCase()}</div>
+  ${empresa?.address ? `<div class="center small">${empresa.address}</div>` : ''}
+  <div class="center small">NIT: ${nitEmpresa}</div>
   <div class="divider"></div>
   <div class="doc-type">${esFactura ? 'FACTURA DE VENTA' : 'RECIBO DE CAJA'}</div>
   <div class="row"><span>No.:</span><span class="bold">${numDoc}</span></div>
@@ -143,7 +146,8 @@ async function imprimirRecibo(ventaId: number): Promise<void> {
   <div class="row"><span>Forma de pago:</span><span>${venta.payment_method ?? ''}</span></div>
   <div class="divider"></div>
   <div class="center">¡Gracias por su preferencia!</div>
-  <div class="center small">Restaurante El Punto de Laura</div>
+  <div class="center small">${nombreEmpresa}</div>
+  ${empresa?.phone ? `<div class="center small">Tel: ${empresa.phone}</div>` : ''}
 </body>
 </html>`
 
@@ -163,6 +167,7 @@ async function imprimirRecibo(ventaId: number): Promise<void> {
 
 // Componente principal del historial de ventas
 export function HistorialFacturas() {
+  const empresa = useCompany()
   const [ventas, setVentas] = useState<VentaResumen[]>([])
   const [cargando, setCargando] = useState(true)
   const [error, setError] = useState<string | null>(null)
@@ -194,7 +199,7 @@ export function HistorialFacturas() {
   // Imprimir o exportar a PDF (mismo recibo, el usuario elige destino en el diálogo)
   const handleImprimir = async (ventaId: number) => {
     setImprimiendo(ventaId)
-    await imprimirRecibo(ventaId)
+    await imprimirRecibo(ventaId, empresa)
     setImprimiendo(null)
   }
 

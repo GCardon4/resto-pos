@@ -1,7 +1,7 @@
 'use server'
 
 import { createClient } from '@/lib/supabase/server'
-import { claveDiaLocal as claveDia, etiquetaDiaLocal as etiquetaDia } from '@/lib/fecha/zonaHoraria'
+import { claveDiaLocal as claveDia, etiquetaDiaLocal as etiquetaDia, claveMesLocal, etiquetaMes } from '@/lib/fecha/zonaHoraria'
 
 function aNumero(valor: unknown): number {
   const n = typeof valor === 'number' ? valor : parseFloat(String(valor ?? 0))
@@ -220,4 +220,78 @@ export async function obtenerMetricasDashboard(dias = 7): Promise<MetricasDashbo
     historial,
     ventasPorMetodoPago,
   }
+}
+
+export interface MovimientoBalance { fecha: string; concepto: string; metodo: string; valor: number; tipo: 'ingreso' | 'gasto' }
+export interface MesBalance { clave: string; etiqueta: string; ingresos: number; gastos: number; balance: number; movimientos: MovimientoBalance[] }
+
+// Obtener el balance mensual (ingresos vs gastos) de los últimos `meses` meses
+export async function obtenerBalanceMensual(meses = 12): Promise<MesBalance[]> {
+  const supabase = await createClient()
+
+  // Construir las claves de los últimos `meses` meses (incluyendo el actual) en zona local
+  const ahora = new Date()
+  const mapaMeses = new Map<string, MesBalance>()
+  for (let i = meses - 1; i >= 0; i--) {
+    const d = new Date(ahora.getFullYear(), ahora.getMonth() - i, 1)
+    const clave = claveMesLocal(d)
+    mapaMeses.set(clave, { clave, etiqueta: etiquetaMes(clave), ingresos: 0, gastos: 0, balance: 0, movimientos: [] })
+  }
+
+  // Límite inferior de la consulta: primer día del mes más antiguo del rango
+  const primerMesClave = [...mapaMeses.keys()][0]
+  const [anioDesde, mesDesde] = primerMesClave.split('-').map(Number)
+  const desde = new Date(anioDesde, mesDesde - 1, 1).toISOString()
+
+  const [{ data: ventasRaw }, { data: gastosRaw }] = await Promise.all([
+    supabase
+      .from('sales')
+      .select('id, total, payment_method, created_at')
+      .gte('created_at', desde)
+      .order('created_at', { ascending: false }),
+    supabase
+      .from('expenses')
+      .select('id, expense_date, description, amount, expense_categories:expense_category_id (name)')
+      .gte('expense_date', desde)
+      .order('expense_date', { ascending: false }),
+  ])
+
+  for (const v of (ventasRaw ?? []) as any[]) {
+    const clave = claveMesLocal(new Date(v.created_at))
+    const mes = mapaMeses.get(clave)
+    if (!mes) continue
+    const valor = aNumero(v.total)
+    mes.ingresos += valor
+    mes.movimientos.push({
+      fecha: v.created_at,
+      concepto: `Venta #${String(v.id).padStart(5, '0')}`,
+      metodo: normalizarMetodoPago(v.payment_method ?? 'Sin especificar'),
+      valor,
+      tipo: 'ingreso',
+    })
+  }
+
+  for (const g of (gastosRaw ?? []) as any[]) {
+    const clave = claveMesLocal(new Date(g.expense_date))
+    const mes = mapaMeses.get(clave)
+    if (!mes) continue
+    const valor = aNumero(g.amount)
+    const categoria = Array.isArray(g.expense_categories) ? g.expense_categories[0] : g.expense_categories
+    mes.gastos += valor
+    mes.movimientos.push({
+      fecha: g.expense_date,
+      concepto: g.description || categoria?.name || 'Gasto',
+      metodo: categoria?.name ?? '—',
+      valor,
+      tipo: 'gasto',
+    })
+  }
+
+  return [...mapaMeses.values()]
+    .map(mes => ({
+      ...mes,
+      balance: mes.ingresos - mes.gastos,
+      movimientos: mes.movimientos.sort((a, b) => new Date(b.fecha).getTime() - new Date(a.fecha).getTime()),
+    }))
+    .reverse()
 }

@@ -1,5 +1,8 @@
 import { redirect } from 'next/navigation'
 import { createClient } from '@/lib/supabase/server'
+import { createAdminClient } from '@/lib/supabase/admin'
+import { PagoPendienteModal } from '@/components/admin/PagoPendienteModal'
+import { CompanyProvider } from '@/lib/context/CompanyContext'
 
 // Verificar sesión activa para rutas protegidas
 export default async function ProtectedLayout({
@@ -12,5 +15,18 @@ export default async function ProtectedLayout({
 
   if (!user) redirect('/login')
 
-  return <>{children}</>
+  // Cliente admin: la tabla 'company' es config global sin políticas RLS propias
+  const { data: empresa } = await createAdminClient()
+    .from('company')
+    .select('name, nit, address, phone, payment')
+    .limit(1)
+    .maybeSingle()
+  const pagoPendiente = empresa?.payment === false
+
+  return (
+    <CompanyProvider empresa={empresa}>
+      {children}
+      {pagoPendiente && <PagoPendienteModal />}
+    </CompanyProvider>
+  )
 }

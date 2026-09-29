@@ -4,6 +4,7 @@ import Link from 'next/link'
 import { usePathname } from 'next/navigation'
 import { logoutAction } from '@/lib/auth/actions'
 import InstallPWA from "@/components/pwa/InstallPWA";
+import { useCompany } from '@/lib/context/CompanyContext'
 
 const navItems = [
   { href: '/admin',           label: 'Dashboard',   icon: 'dashboard',        exact: true  },
@@ -16,6 +17,8 @@ const navItems = [
 // Navegación lateral del panel de administración
 export function AdminNav({ nombreUsuario }: { nombreUsuario: string }) {
   const pathname = usePathname()
+  const empresa = useCompany()
+  const nombreEmpresa = empresa?.name || 'Resto-POS'
 
   const estaActivo = (href: string, exact: boolean) =>
     exact ? pathname === href : pathname.startsWith(href)
@@ -35,7 +38,7 @@ export function AdminNav({ nombreUsuario }: { nombreUsuario: string }) {
         {/* Logo */}
         <div className="px-6 py-5 flex items-center gap-3 border-b border-surface-variant">
           <span className="material-symbols-outlined text-primary text-[32px] filled-icon">restaurant_menu</span>
-          <h1 className="font-display font-bold text-xl text-primary leading-tight">Resto-POS</h1>
+          <h1 className="font-display font-bold text-xl text-primary leading-tight truncate">{nombreEmpresa}</h1>
         </div>
 
         {/* Navegación */}
